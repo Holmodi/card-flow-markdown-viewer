@@ -11,7 +11,9 @@ export default function App() {
   useTauriEvents();
 
   const currentDir = useCardStore((s) => s.currentDir);
+  const selectedCard = useCardStore((s) => s.selectedCard);
   const addCards = useCardStore((s) => s.addCards);
+  const setSelectedCard = useCardStore((s) => s.setSelectedCard);
   const [showNewCard, setShowNewCard] = useState(false);
   const [newFilename, setNewFilename] = useState("");
 
@@ -23,8 +25,19 @@ export default function App() {
     setShowNewCard(false);
   }, [currentDir, newFilename, addCards]);
 
+  const handleBackdropClick = useCallback(() => {
+    setSelectedCard(null);
+  }, [setSelectedCard]);
+
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col">
+    <div className="h-screen bg-slate-900 flex flex-col overflow-hidden relative">
+      {/* 遮罩层 */}
+      {selectedCard && (
+        <div
+          className="fixed inset-0 bg-black/20 z-40"
+          onClick={handleBackdropClick}
+        />
+      )}
       <Toolbar />
       <TagFilter />
 
@@ -55,11 +68,12 @@ export default function App() {
         </div>
       )}
 
-      <div className="flex-1">
-        <CardGrid />
+      <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 overflow-y-auto min-w-0">
+          <CardGrid />
+        </div>
+        <CardDetail />
       </div>
-
-      <CardDetail />
     </div>
   );
 }

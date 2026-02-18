@@ -1,9 +1,25 @@
+import { useState, useRef, useEffect, useCallback } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useCardStore } from "../stores/cardStore";
 import { scanDirectory } from "../lib/tauri";
 import type { SortBy } from "../types/card";
+import SettingsPanel from "./SettingsPanel";
+
+// 防抖 hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 export default function Toolbar() {
+  const [showSettings, setShowSettings] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
   const searchQuery = useCardStore((s) => s.searchQuery);
   const setSearchQuery = useCardStore((s) => s.setSearchQuery);
   const sortBy = useCardStore((s) => s.sortBy);
@@ -15,6 +31,32 @@ export default function Toolbar() {
   const setCurrentDir = useCardStore((s) => s.setCurrentDir);
   const clearCards = useCardStore((s) => s.clearCards);
   const cards = useCardStore((s) => s.cards);
+
+  // 搜索防抖（300ms 延迟）
+  const [inputValue, setInputValue] = useState(searchQuery);
+  const debouncedSearch = useDebounce(inputValue, 300);
+
+  useEffect(() => {
+    if (debouncedSearch !== searchQuery) {
+      setSearchQuery(debouncedSearch);
+    }
+  }, [debouncedSearch, searchQuery, setSearchQuery]);
+
+  useEffect(() => {
+    if (searchQuery !== inputValue) {
+      setInputValue(searchQuery);
+    }
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+        setShowSettings(false);
+      }
+    };
+    if (showSettings) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showSettings]);
 
   const handleOpenFolder = async () => {
     const selected = await open({ directory: true, multiple: false });
@@ -40,8 +82,8 @@ export default function Toolbar() {
       <input
         type="text"
         placeholder="搜索卡片..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
         className="flex-1 px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"
       />
 
@@ -64,6 +106,17 @@ export default function Toolbar() {
       </button>
 
       <span className="text-xs text-slate-400 shrink-0">{cards.size} 张卡片</span>
+
+      <div className="relative" ref={settingsRef}>
+        <button
+          onClick={() => setShowSettings(!showSettings)}
+          className="px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-sm text-slate-200 hover:bg-slate-700 cursor-pointer"
+          title="显示设置"
+        >
+          ⚙
+        </button>
+        {showSettings && <SettingsPanel />}
+      </div>
     </div>
   );
 }

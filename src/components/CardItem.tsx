@@ -1,3 +1,4 @@
+import { memo, useCallback } from "react";
 import type { CardMeta } from "../types/card";
 import { useCardStore } from "../stores/cardStore";
 
@@ -5,15 +6,33 @@ interface Props {
   data: CardMeta;
 }
 
-export default function CardItem({ data }: Props) {
+function CardItemInner({ data }: Props) {
   const setSelectedCard = useCardStore((s) => s.setSelectedCard);
+  const selectedCard = useCardStore((s) => s.selectedCard);
+  const settings = useCardStore((s) => s.settings);
+  const isSelected = selectedCard === data.path;
+
+  const handleClick = useCallback(() => {
+    setSelectedCard(data.path);
+  }, [data.path, setSelectedCard]);
 
   return (
     <div
-      onClick={() => setSelectedCard(data.path)}
-      className="bg-slate-800 border border-slate-700 rounded-xl p-4 cursor-pointer hover:border-blue-500 hover:bg-slate-750 transition-colors"
+      onClick={handleClick}
+      className={`bg-slate-800 border rounded-xl p-4 cursor-pointer hover:border-blue-500 hover:bg-slate-750 transition-colors ${
+        isSelected ? "border-blue-500 ring-1 ring-blue-500/50" : "border-slate-700"
+      }`}
     >
-      <h3 className="text-sm font-semibold text-slate-100 mb-2 line-clamp-2">
+      <h3
+        className="font-semibold text-slate-100 mb-2"
+        style={{
+          fontSize: `${settings.titleFontSize}px`,
+          display: "-webkit-box",
+          WebkitLineClamp: settings.titleLines,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}
+      >
         {data.title}
       </h3>
 
@@ -30,7 +49,16 @@ export default function CardItem({ data }: Props) {
         </div>
       )}
 
-      <p className="text-xs text-slate-400 line-clamp-4 leading-relaxed">
+      <p
+        className="text-slate-400 leading-relaxed"
+        style={{
+          fontSize: `${settings.bodyFontSize}px`,
+          display: "-webkit-box",
+          WebkitLineClamp: settings.previewLines,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}
+      >
         {data.preview || "（空内容）"}
       </p>
 
@@ -41,3 +69,5 @@ export default function CardItem({ data }: Props) {
     </div>
   );
 }
+
+export default memo(CardItemInner);

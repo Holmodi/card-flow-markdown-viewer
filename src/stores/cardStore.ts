@@ -1,5 +1,15 @@
 import { create } from "zustand";
 import type { CardMeta, SortBy, SortOrder } from "../types/card";
+import type { DisplaySettings } from "../types/settings";
+import { defaultSettings } from "../types/settings";
+
+function loadSettings(): DisplaySettings {
+  try {
+    const raw = localStorage.getItem("card-flow-settings");
+    if (raw) return { ...defaultSettings, ...JSON.parse(raw) };
+  } catch {}
+  return defaultSettings;
+}
 
 interface CardStore {
   cards: Map<string, CardMeta>;
@@ -10,6 +20,7 @@ interface CardStore {
   selectedCard: string | null;
   isScanning: boolean;
   currentDir: string | null;
+  settings: DisplaySettings;
 
   addCards: (cards: CardMeta[]) => void;
   updateCard: (card: CardMeta) => void;
@@ -23,6 +34,7 @@ interface CardStore {
   setIsScanning: (scanning: boolean) => void;
   setCurrentDir: (dir: string) => void;
   clearCards: () => void;
+  updateSettings: (partial: Partial<DisplaySettings>) => void;
 }
 
 export const useCardStore = create<CardStore>((set) => ({
@@ -34,6 +46,7 @@ export const useCardStore = create<CardStore>((set) => ({
   selectedCard: null,
   isScanning: false,
   currentDir: null,
+  settings: loadSettings(),
 
   addCards: (cards) =>
     set((state) => {
@@ -72,4 +85,10 @@ export const useCardStore = create<CardStore>((set) => ({
   setIsScanning: (isScanning) => set({ isScanning }),
   setCurrentDir: (currentDir) => set({ currentDir }),
   clearCards: () => set({ cards: new Map(), selectedCard: null }),
+  updateSettings: (partial) =>
+    set((state) => {
+      const next = { ...state.settings, ...partial };
+      localStorage.setItem("card-flow-settings", JSON.stringify(next));
+      return { settings: next };
+    }),
 }));
