@@ -13,7 +13,7 @@
 - **侧边详情面板**：Markdown 渲染与编辑
 - **智能过滤排序**：标签筛选、时间轴排序、实时搜索
 - **实时文件监听**：目录变更自动更新
-![主界面2](pic/cardflowPreView2.png)
+![主界面2](pic/carflowPreView2.png)
 ---
 
 ## 快速开始
