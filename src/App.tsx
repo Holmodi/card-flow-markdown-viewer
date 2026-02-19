@@ -4,10 +4,10 @@ import TagFilter from "./components/TagFilter";
 import CardGrid from "./components/CardGrid";
 import CardDetail from "./components/CardDetail";
 import SettingsPanel from "./components/SettingsPanel";
-import { FloatingTool } from "./components/FloatingTool";
 import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useCardStore } from "./stores/cardStore";
-import { createFile } from "./lib/tauri";
+import { createFile, deleteFile } from "./lib/tauri";
+import { useCardFilter } from "./hooks/useCardFilter";
 
 function generateTimestampFilename(): string {
   const now = new Date();
@@ -27,6 +27,10 @@ export default function App() {
   const addCards = useCardStore((s) => s.addCards);
   const setSelectedCard = useCardStore((s) => s.setSelectedCard);
   const loadLastDir = useCardStore((s) => s.loadLastDir);
+  const removeCard = useCardStore((s) => s.removeCard);
+  const deleteConfirmPath = useCardStore((s) => s.deleteConfirmPath);
+  const setDeleteConfirmPath = useCardStore((s) => s.setDeleteConfirmPath);
+  const editing = useCardStore((s) => s.isEditing);
   const [showSettings, setShowSettings] = useState(false);
   const hasInitialScan = useRef(false);
 
@@ -37,13 +41,27 @@ export default function App() {
     addCards([card]);
   }, [currentDir, addCards]);
 
+  // 计算过滤后的卡片数据（用于状态栏显示）
+  const filteredCards = useCardFilter();
+
   const handleRefresh = useCallback(() => {
     window.location.reload();
   }, []);
 
   const handleBackdropClick = useCallback(() => {
-    setSelectedCard(null);
-  }, [setSelectedCard]);
+    // 编辑模式下点击遮罩层不关闭
+    if (!editing) {
+      setSelectedCard(null);
+    }
+  }, [setSelectedCard, editing]);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (deleteConfirmPath) {
+      await deleteFile(deleteConfirmPath);
+      removeCard(deleteConfirmPath);
+      setDeleteConfirmPath(null);
+    }
+  }, [deleteConfirmPath, removeCard, setDeleteConfirmPath]);
 
   const settingsRef = useRef<HTMLDivElement>(null);
 
@@ -75,8 +93,19 @@ export default function App() {
         />
       )}
 
-      {/* 刷新按钮和设置按钮 - 右上角 */}
+      {/* 按钮区域 - 右上角 */}
       <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
+        {currentDir && (
+          <button
+            onClick={handleCreate}
+            className="p-2 bg-slate-800/80 border border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white hover:border-slate-600 rounded-xl transition-all duration-200 cursor-pointer"
+            title="新建卡片"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+        )}
         <button
           onClick={handleRefresh}
           className="p-2 bg-slate-800/80 border border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white hover:border-slate-600 rounded-xl transition-all duration-200 cursor-pointer"
@@ -105,30 +134,69 @@ export default function App() {
       <Toolbar />
       <TagFilter />
 
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 flex flex-col overflow-hidden relative">
         <div className="flex-1 overflow-y-auto min-w-0">
-          <CardGrid />
+          <div className="p-4 pt-8 pr-8">
+            <CardGrid />
+          </div>
         </div>
-        <CardDetail />
       </div>
 
-      {/* 新建卡片悬浮工具 */}
-      {currentDir && (
-        <FloatingTool>
-          <button
-            onClick={handleCreate}
-            className="px-4 py-2.5 bg-slate-800/95 backdrop-blur-md border border-slate-700 hover:bg-slate-700 text-slate-300 rounded-xl text-sm cursor-pointer transition-all shadow-lg hover:shadow-xl hover:scale-105"
-          >
-            + 新建卡片
-          </button>
-        </FloatingTool>
-      )}
+      <CardDetail />
 
       {/* 设置面板 - 放在顶层 */}
       {showSettings && (
         <div ref={settingsRef} className="absolute right-4 top-14 z-[70]">
           <SettingsPanel />
         </div>
+      )}
+
+      {/* 状态栏 - 悬浮在右下角 */}
+      <StatusBar totalCards={filteredCards.length} />
+
+      {/* 全局删除确认对话框 */}
+      {deleteConfirmPath && (
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center">
+          <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 w-80">
+            <h3 className="text-lg font-semibold text-white mb-2">确认删除</h3>
+            <p className="text-slate-400 mb-4">确定删除这张卡片？此操作无法撤销。</p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setDeleteConfirmPath(null)}
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-all cursor-pointer"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg text-sm font-medium shadow-lg shadow-primary-600/20 transition-all cursor-pointer"
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 状态栏组件 - 悬浮在右下角，不挤占正文空间
+function StatusBar({ totalCards }: { totalCards: number }) {
+  const selectedCard = useCardStore((s) => s.selectedCard);
+  const currentWordCount = useCardStore((s) => s.currentWordCount);
+
+  return (
+    <div className="fixed bottom-0 right-0 z-50 flex items-center gap-3 px-3 py-1.5 bg-slate-800/90 backdrop-blur-md border-t border-slate-700/50 rounded-xl text-xs text-slate-400">
+      {selectedCard ? (
+        <>
+          <span className="text-slate-600">|</span>
+          <span>{currentWordCount.toLocaleString()} 字</span>
+          <span className="text-slate-600">|</span>
+          <span>{totalCards} 张</span>
+        </>
+      ) : (
+        <span>{totalCards} 张</span>
       )}
     </div>
   );

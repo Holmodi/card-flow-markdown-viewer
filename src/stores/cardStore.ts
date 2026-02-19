@@ -7,7 +7,19 @@ import { scanDirectory } from "../lib/tauri";
 function loadSettings(): DisplaySettings {
   try {
     const raw = localStorage.getItem("card-flow-settings");
-    if (raw) return { ...defaultSettings, ...JSON.parse(raw) };
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        timezone: defaultSettings.timezone,
+        columnCount: defaultSettings.columnCount,
+        detailWidth: defaultSettings.detailWidth,
+        titleFontSize: defaultSettings.titleFontSize,
+        bodyFontSize: defaultSettings.bodyFontSize,
+        titleLines: defaultSettings.titleLines,
+        previewLines: defaultSettings.previewLines,
+        ...parsed,
+      };
+    }
   } catch {}
   return defaultSettings;
 }
@@ -30,6 +42,9 @@ interface CardStore {
   isScanning: boolean;
   currentDir: string | null;
   settings: DisplaySettings;
+  deleteConfirmPath: string | null;
+  isEditing: boolean;
+  currentWordCount: number;
 
   addCards: (cards: CardMeta[]) => void;
   updateCard: (card: CardMeta) => void;
@@ -45,6 +60,9 @@ interface CardStore {
   clearCards: () => void;
   updateSettings: (partial: Partial<DisplaySettings>) => void;
   loadLastDir: () => void;
+  setDeleteConfirmPath: (path: string | null) => void;
+  setIsEditing: (editing: boolean) => void;
+  setWordCount: (count: number) => void;
 }
 
 export const useCardStore = create<CardStore>((set) => ({
@@ -57,6 +75,9 @@ export const useCardStore = create<CardStore>((set) => ({
   isScanning: false,
   currentDir: loadLastDir(),
   settings: loadSettings(),
+  deleteConfirmPath: null,
+  isEditing: false,
+  currentWordCount: 0,
 
   addCards: (cards) =>
     set((state) => {
@@ -113,4 +134,7 @@ export const useCardStore = create<CardStore>((set) => ({
       scanDirectory(lastDir);
     }
   },
+  setDeleteConfirmPath: (path) => set({ deleteConfirmPath: path }),
+  setIsEditing: (editing) => set({ isEditing: editing }),
+  setWordCount: (count) => set({ currentWordCount: count }),
 }));

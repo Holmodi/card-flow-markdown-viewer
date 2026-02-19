@@ -52,9 +52,22 @@ fn extract_inline_tags(text: &str) -> Vec<String> {
 }
 
 pub fn parse_card(path: &Path) -> Option<CardMeta> {
-    let content = fs::read_to_string(path).ok()?;
-    let metadata = fs::metadata(path).ok()?;
+    // 先获取元数据，立即释放
+    let metadata = match fs::metadata(path) {
+        Ok(m) => m,
+        Err(_) => return None,
+    };
     let size = metadata.len();
+
+    // 获取时间戳
+    let fs_modified = metadata.modified().ok().map(system_time_to_iso);
+    let fs_created = metadata.created().ok().map(system_time_to_iso);
+
+    // 读取文件内容
+    let content = match fs::read_to_string(path) {
+        Ok(c) => c,
+        Err(_) => return None,
+    };
 
     let (frontmatter, body) = extract_frontmatter(&content);
 
@@ -86,10 +99,6 @@ pub fn parse_card(path: &Path) -> Option<CardMeta> {
     tags.extend(inline_tags);
     tags.sort_unstable();
     tags.dedup();
-
-    // fallback 到文件系统时间戳
-    let fs_modified = metadata.modified().ok().map(system_time_to_iso);
-    let fs_created = metadata.created().ok().map(system_time_to_iso);
 
     let created = frontmatter
         .as_ref()
@@ -130,4 +139,9 @@ fn extract_frontmatter(content: &str) -> (Option<serde_yaml::Value>, &str) {
     } else {
         (None, content)
     }
+}
+
+/// 获取文件正文，跳过 YAML frontmatter
+pub fn get_body(content: &str) -> &str {
+    extract_frontmatter(content).1
 }

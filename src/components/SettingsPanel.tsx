@@ -2,7 +2,7 @@ import { useCardStore } from "../stores/cardStore";
 import type { DisplaySettings } from "../types/settings";
 
 const sliders: { key: keyof DisplaySettings; label: string; min: number; max: number; step: number; unit: string }[] = [
-  { key: "cardWidth", label: "卡片宽度", min: 200, max: 500, step: 20, unit: "px" },
+  { key: "columnCount", label: "显示列数", min: 1, max: 5, step: 1, unit: "列" },
   { key: "titleFontSize", label: "标题字号", min: 12, max: 24, step: 1, unit: "px" },
   { key: "bodyFontSize", label: "正文字号", min: 10, max: 20, step: 1, unit: "px" },
   { key: "titleLines", label: "标题行数", min: 1, max: 5, step: 1, unit: "行" },

@@ -3,7 +3,7 @@ use std::path::Path;
 
 use tauri::{AppHandle, State};
 
-use crate::frontmatter::parse_card;
+use crate::frontmatter::{get_body, parse_card};
 use crate::models::CardMeta;
 use crate::scanner;
 use crate::watcher::WatcherState;
@@ -30,7 +30,9 @@ pub async fn scan_directory(
 
 #[tauri::command]
 pub async fn read_file(path: String) -> Result<String, String> {
-    fs::read_to_string(&path).map_err(|e| format!("Failed to read file: {}", e))
+    let content = fs::read_to_string(&path).map_err(|e| format!("Failed to read file: {}", e))?;
+    // 跳过 YAML frontmatter，只返回正文
+    Ok(get_body(&content).to_string())
 }
 
 #[tauri::command]

@@ -38,6 +38,12 @@ body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background-color: #020617; /* slate-950 */
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139, 92, 246, 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 60%, rgba(59, 130, 246, 0.06), transparent),
+    radial-gradient(ellipse 50% 30% at 20% 80%, rgba(236, 72, 153, 0.04), transparent),
+    #020617;
+  background-attachment: fixed;
   color: #e2e8f0;
 }
 
@@ -53,19 +59,64 @@ body {
 
 /* 自定义滚动条 */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
+  background: rgba(139, 92, 246, 0.3);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: rgba(139, 92, 246, 0.5);
+}
+
+/* Markdown Checkbox 样式 */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(139, 92, 246, 0.6);
+  border-radius: 4px;
+  background-color: rgba(30, 41, 59, 0.5);
+  cursor: pointer;
+  margin-right: 8px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+  transition: all 0.2s ease;
+}
+
+input[type="checkbox"]:hover {
+  border-color: rgba(139, 92, 246, 0.9);
+  background-color: rgba(139, 92, 246, 0.2);
+}
+
+input[type="checkbox"]:checked {
+  background-color: rgba(139, 92, 246, 0.8);
+  border-color: rgba(139, 92, 246, 0.8);
+}
+
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* 已完成的 checkbox 项目样式 */
+li:has(input[type="checkbox"]:checked) {
+  text-decoration: line-through;
+  color: rgba(148, 163, 184, 0.7);
 }
