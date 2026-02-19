@@ -3,6 +3,7 @@ use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::models::CardMeta;
+use regex::Regex;
 
 fn system_time_to_iso(t: SystemTime) -> String {
     let secs = t.duration_since(UNIX_EPOCH).unwrap_or_default().as_secs();
@@ -42,6 +43,14 @@ fn is_leap(y: i64) -> bool {
     (y % 4 == 0 && y % 100 != 0) || y % 400 == 0
 }
 
+/// 从文本中提取 #tag 标签
+fn extract_inline_tags(text: &str) -> Vec<String> {
+    let re = Regex::new(r"#([\w\u4e00-\u9fa5\-]+)").unwrap();
+    re.captures_iter(text)
+        .filter_map(|cap| cap.get(1).map(|m| m.as_str().to_string()))
+        .collect()
+}
+
 pub fn parse_card(path: &Path) -> Option<CardMeta> {
     let content = fs::read_to_string(path).ok()?;
     let metadata = fs::metadata(path).ok()?;
@@ -58,7 +67,7 @@ pub fn parse_card(path: &Path) -> Option<CardMeta> {
                 .unwrap_or_default()
         });
 
-    let tags = frontmatter
+    let mut tags: Vec<String> = frontmatter
         .as_ref()
         .and_then(|fm| {
             fm.get("tags").and_then(|v| {
@@ -70,6 +79,13 @@ pub fn parse_card(path: &Path) -> Option<CardMeta> {
             })
         })
         .unwrap_or_default();
+
+    // 从 body 开头提取 #tag 标签
+    let body_start = &body.chars().take(500).collect::<String>();
+    let inline_tags = extract_inline_tags(body_start);
+    tags.extend(inline_tags);
+    tags.sort_unstable();
+    tags.dedup();
 
     // fallback 到文件系统时间戳
     let fs_modified = metadata.modified().ok().map(system_time_to_iso);
