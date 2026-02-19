@@ -1,8 +1,9 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Toolbar from "./components/Toolbar";
 import TagFilter from "./components/TagFilter";
 import CardGrid from "./components/CardGrid";
 import CardDetail from "./components/CardDetail";
+import SettingsPanel from "./components/SettingsPanel";
 import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useCardStore } from "./stores/cardStore";
 import { createFile } from "./lib/tauri";
@@ -16,6 +17,7 @@ export default function App() {
   const setSelectedCard = useCardStore((s) => s.setSelectedCard);
   const [showNewCard, setShowNewCard] = useState(false);
   const [newFilename, setNewFilename] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
 
   const handleCreate = useCallback(async () => {
     if (!currentDir || !newFilename.trim()) return;
@@ -29,6 +31,18 @@ export default function App() {
     setSelectedCard(null);
   }, [setSelectedCard]);
 
+  const settingsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+        setShowSettings(false);
+      }
+    };
+    if (showSettings) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showSettings]);
+
   return (
     <div className="h-screen bg-slate-900 flex flex-col overflow-hidden relative">
       {/* 遮罩层 */}
@@ -38,7 +52,7 @@ export default function App() {
           onClick={handleBackdropClick}
         />
       )}
-      <Toolbar />
+      <Toolbar showSettings={showSettings} onToggleSettings={() => setShowSettings(!showSettings)} />
       <TagFilter />
 
       {currentDir && (
@@ -68,12 +82,19 @@ export default function App() {
         </div>
       )}
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         <div className="flex-1 overflow-y-auto min-w-0">
           <CardGrid />
         </div>
         <CardDetail />
       </div>
+
+      {/* 设置面板 - 放在顶层 */}
+      {showSettings && (
+        <div ref={settingsRef} className="absolute right-4 top-14 z-[70]">
+          <SettingsPanel />
+        </div>
+      )}
     </div>
   );
 }

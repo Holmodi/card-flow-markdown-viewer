@@ -19,6 +19,16 @@ pub fn run() {
             commands::create_file,
             commands::delete_file,
         ])
+        .setup(|app| {
+            #[cfg(target_os = "macos")]
+            {
+                use tauri::Manager;
+                let window = app.get_webview_window("main").unwrap();
+                // 设置 macOS 深色主题
+                window.set_theme(Some(tauri::Theme::Dark))?;
+            }
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -14,7 +14,7 @@ export default function SettingsPanel() {
   const updateSettings = useCardStore((s) => s.updateSettings);
 
   return (
-    <div className="absolute right-0 top-full mt-2 w-72 bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-xl z-50">
+    <div className="absolute right-0 top-full mt-2 w-72 bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-xl z-[60]">
       <h3 className="text-sm font-semibold text-slate-200 mb-3">显示设置</h3>
       <div className="space-y-3">
         {sliders.map(({ key, label, min, max, step, unit }) => (

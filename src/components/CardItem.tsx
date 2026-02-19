@@ -19,12 +19,14 @@ function CardItemInner({ data }: Props) {
   return (
     <div
       onClick={handleClick}
-      className={`bg-slate-800 border rounded-xl p-4 cursor-pointer hover:border-blue-500 hover:bg-slate-750 transition-colors ${
-        isSelected ? "border-blue-500 ring-1 ring-blue-500/50" : "border-slate-700"
-      }`}
+      className={`card-enter bg-slate-800/80 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-5 cursor-pointer
+        hover:bg-slate-800 hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/10
+        hover:-translate-y-1 transition-all duration-300 ease-out
+        ${isSelected ? "border-primary-500 ring-2 ring-primary-500/20" : ""}`}
+      style={{ animationDelay: `${Math.random() * 0.2}s` }}
     >
       <h3
-        className="font-semibold text-slate-100 mb-2"
+        className="font-semibold text-slate-100 mb-3 leading-snug"
         style={{
           fontSize: `${settings.titleFontSize}px`,
           display: "-webkit-box",
@@ -37,11 +39,11 @@ function CardItemInner({ data }: Props) {
       </h3>
 
       {data.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-2">
+        <div className="flex flex-wrap gap-1.5 mb-3">
           {data.tags.map((tag) => (
             <span
               key={tag}
-              className="px-2 py-0.5 bg-blue-900/50 text-blue-300 rounded-full text-xs"
+              className="px-2.5 py-1 bg-primary-900/40 text-primary-300 rounded-full text-xs font-medium border border-primary-700/30"
             >
               {tag}
             </span>
@@ -62,9 +64,9 @@ function CardItemInner({ data }: Props) {
         {data.preview || "（空内容）"}
       </p>
 
-      <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-        <span>{data.created ?? ""}</span>
-        <span>{(data.size / 1024).toFixed(1)} KB</span>
+      <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
+        <span className="truncate max-w-[60%]">{data.created ?? ""}</span>
+        <span className="text-slate-500 font-mono">{(data.size / 1024).toFixed(1)} KB</span>
       </div>
     </div>
   );

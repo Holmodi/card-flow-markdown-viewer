@@ -19,7 +19,6 @@ export default function CardGrid() {
   // 所有 hook 调用必须在这里完成，不能在条件返回之后
   const hasFilter = searchQuery.trim().length > 0 || selectedTags.length > 0;
   const hasCards = cards.size > 0;
-  const hasFilteredCards = filteredCards.length > 0;
 
   // 计算列数（每列宽度 = cardWidth + gap）
   const gap = 16;
@@ -54,8 +53,14 @@ export default function CardGrid() {
     <div className="p-4 flex gap-4 h-full">
       {columns.map((col, colIndex) => (
         <div key={colIndex} className="flex-1 flex flex-col gap-4 min-w-0">
-          {col.map((card) => (
-            <div key={card.path} style={{ contentVisibility: "auto" }}>
+          {col.map((card, cardIndex) => (
+            <div
+              key={card.path}
+              style={{
+                contentVisibility: "auto",
+                animationDelay: `${cardIndex * 0.05}s`
+              }}
+            >
               <CardItem data={card} />
             </div>
           ))}
