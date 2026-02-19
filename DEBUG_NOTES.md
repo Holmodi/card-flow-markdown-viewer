@@ -110,3 +110,47 @@ const cols: CardMeta[][] = Array.from({ length: columnCount }, () => []);
 - `src/components/CardGrid.tsx` - Hooks 顺序修复
 - `src/hooks/useTauriEvents.ts` - 添加调试日志
 - `src-tauri/src/scanner.rs` - 添加扫描日志
+
+---
+
+# GitHub Release 与打包工作流
+
+## 快速发布命令
+
+```bash
+# 完整流程
+git add -A && git commit -m "feat: description"
+git push origin main
+npm run tauri build
+gh release create v0.1.0 --title "v0.1.0" --notes "## Changes..." -- /path/to/dmg
+```
+
+## 常见问题处理
+
+### 1. 版本更新时删除旧 release
+```bash
+gh release delete v0.1.0 -y
+rm -rf src-tauri/target/release/bundle
+npm run tauri build
+```
+
+### 2. 打包产物位置
+```
+src-tauri/target/release/bundle/
+├── macos/Card-Flow-Markdown-Viewer.app
+└── dmg/Card-Flow-Markdown-Viewer_0.1.0_aarch64.dmg
+```
+
+### 3. GitHub CLI 验证登录状态
+```bash
+gh auth status
+gh release list
+```
+
+## 发布检查清单
+
+- [ ] `npm run build` TypeScript 编译通过
+- [ ] 功能测试通过
+- [ ] 更新版本号（如需要）
+- [ ] 编写 release notes
+- [ ] 上传 DMG 文件

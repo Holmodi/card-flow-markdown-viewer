@@ -79,3 +79,60 @@ function CardGrid() {
 1. Run `npm run build` to fix TypeScript errors
 2. Remove unused imports
 3. Verify hooks are at top level
+
+## Release Workflow
+
+### Full Release Process
+
+```bash
+# 1. 开发调试
+npm run tauri dev
+
+# 2. 构建并打包
+npm run tauri build
+
+# 3. 提交代码
+git add -A
+git commit -m "feat: description"
+
+# 4. 推送到远程
+git push origin main
+
+# 5. 如果是更新版本，先删除旧 tag 和 release
+gh release delete v0.1.0 -y
+rm -rf src-tauri/target/release/bundle
+
+# 6. 重新打包
+npm run tauri build
+
+# 7. 创建 release 并上传 DMG
+gh release create v0.1.0 \
+  --title "v0.1.0" \
+  --notes "## Changes..." \
+  -- /path/to/Card-Flow-Markdown-Viewer_0.1.0_aarch64.dmg
+```
+
+### GitHub Release Commands
+
+```bash
+# 查看所有 release
+gh release list
+
+# 下载 release 资产
+gh release download v0.1.0 --dir ./downloads
+
+# 删除旧 release（重新发布时需要）
+gh release delete v0.1.0 -y
+```
+
+### macOS Bundle Location
+
+打包产物位于：
+- `.app`: `src-tauri/target/release/bundle/macos/Card-Flow-Markdown-Viewer.app`
+- `.dmg`: `src-tauri/target/release/bundle/dmg/Card-Flow-Markdown-Viewer_0.1.0_aarch64.dmg`
+
+### Troubleshooting
+
+- **Release exists error**: 先删除旧 release 再创建新版本
+- **Upload fails**: 确保在项目根目录运行命令，使用绝对路径指定 DMG 文件
+- **Bundle cleanup**: 重新打包前删除 `src-tauri/target/release/bundle` 目录
