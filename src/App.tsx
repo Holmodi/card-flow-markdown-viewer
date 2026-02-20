@@ -6,7 +6,8 @@ import CardDetail from "./components/CardDetail";
 import SettingsPanel from "./components/SettingsPanel";
 import { useTauriEvents } from "./hooks/useTauriEvents";
 import { useCardStore } from "./stores/cardStore";
-import { createFile, deleteFile } from "./lib/tauri";
+import { createFile, deleteFile, scanDirectory } from "./lib/tauri";
+import { t } from "./lib/i18n";
 import { useCardFilter } from "./hooks/useCardFilter";
 
 function generateTimestampFilename(): string {
@@ -33,7 +34,24 @@ export default function App() {
   const setDeleteConfirmPath = useCardStore((s) => s.setDeleteConfirmPath);
   const editing = useCardStore((s) => s.isEditing);
   const [showSettings, setShowSettings] = useState(false);
+  const [showRecentFolders, setShowRecentFolders] = useState(false);
   const hasInitialScan = useRef(false);
+
+  // 最近文件夹相关状态和函数
+  const setSearchQuery = useCardStore((s) => s.setSearchQuery);
+  const setCurrentDir = useCardStore((s) => s.setCurrentDir);
+  const setIsScanning = useCardStore((s) => s.setIsScanning);
+  const clearCards = useCardStore((s) => s.clearCards);
+  const settings = useCardStore((s) => s.settings);
+
+  const handleOpenRecentFolder = useCallback(async (dir: string) => {
+    clearCards();
+    setSearchQuery("");
+    setCurrentDir(dir);
+    setIsScanning(true);
+    await scanDirectory(dir, settings.scanDepth);
+    setShowRecentFolders(false);
+  }, [clearCards, setSearchQuery, setCurrentDir, setIsScanning, settings.scanDepth]);
 
   const handleCreate = useCallback(async () => {
     if (!currentDir) return;
@@ -132,7 +150,10 @@ export default function App() {
         </button>
       </div>
 
-      <Toolbar />
+      <Toolbar
+        onRecentFolderToggle={() => setShowRecentFolders(!showRecentFolders)}
+        isRecentFolderOpen={showRecentFolders}
+      />
       <TagFilter />
 
       <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -150,6 +171,14 @@ export default function App() {
         <div ref={settingsRef} className="absolute right-4 top-14 z-[70]">
           <SettingsPanel />
         </div>
+      )}
+
+      {/* 最近文件夹面板 - 全局渲染，不受 CardGrid 层叠影响 */}
+      {showRecentFolders && (
+        <RecentFoldersPanel
+          onClose={() => setShowRecentFolders(false)}
+          onSelectFolder={handleOpenRecentFolder}
+        />
       )}
 
       {/* 状态栏 - 悬浮在右下角 */}
@@ -182,22 +211,85 @@ export default function App() {
   );
 }
 
+// 最近文件夹面板 - 全局渲染，不受 CardGrid 层叠影响
+function RecentFoldersPanel({ onClose, onSelectFolder }: { onClose: () => void; onSelectFolder: (dir: string) => void }) {
+  const recentDirs = useCardStore((s) => s.recentDirs);
+  const clearRecentDirs = useCardStore((s) => s.clearRecentDirs);
+  const settings = useCardStore((s) => s.settings);
+  const language = settings.language;
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // 点击外部关闭
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={panelRef}
+      className="fixed w-64 bg-slate-800 border border-slate-700 rounded-xl shadow-xl z-[100] max-h-80 overflow-y-auto"
+      style={{ top: "60px", left: "120px" }}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      <div className="p-2">
+        <div className="text-xs text-slate-400 px-2 py-1">{t("recentFolders", language)}</div>
+        {recentDirs.length === 0 ? (
+          <div className="text-sm text-slate-500 px-2 py-2">{t("noRecentFolders", language)}</div>
+        ) : (
+          <>
+            {recentDirs.map((dir, index) => (
+              <button
+                key={index}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectFolder(dir);
+                }}
+                className="w-full text-left px-2 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg truncate transition-colors cursor-pointer"
+                title={dir}
+              >
+                {dir}
+              </button>
+            ))}
+            <button
+              onClick={() => {
+                clearRecentDirs();
+                onClose();
+              }}
+              className="w-full text-left px-2 py-2 text-sm text-slate-500 hover:text-slate-300 hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+            >
+              {t("clearRecent", language)}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // 状态栏组件 - 悬浮在右下角，不挤占正文空间
 function StatusBar({ totalCards }: { totalCards: number }) {
   const selectedCard = useCardStore((s) => s.selectedCard);
   const currentWordCount = useCardStore((s) => s.currentWordCount);
+  const settings = useCardStore((s) => s.settings);
+  const language = settings.language;
 
   return (
     <div className="fixed bottom-0 right-0 z-50 flex items-center gap-3 px-3 py-1.5 bg-slate-800/90 backdrop-blur-md border-t border-slate-700/50 rounded-xl text-xs text-slate-400">
       {selectedCard ? (
         <>
           <span className="text-slate-600">|</span>
-          <span>{currentWordCount.toLocaleString()} 字</span>
+          <span>{currentWordCount.toLocaleString()} {t("words", language)}</span>
           <span className="text-slate-600">|</span>
-          <span>{totalCards} 张</span>
+          <span>{totalCards} {t("cards", language)}</span>
         </>
       ) : (
-        <span>{totalCards} 张</span>
+        <span>{totalCards} {t("cards", language)}</span>
       )}
     </div>
   );

@@ -69,6 +69,33 @@ scan_directory → scan-batch events → addCards() → CardGrid
 File changes → fs-event → add/update/remove card
 ```
 
+### UI Layer Management
+
+#### Dropdown/Panel Rendering Strategy
+**重要**: 下拉菜单和面板必须渲染在 CardGrid 外部，避免层叠上下文问题。
+
+- **问题**: `react-masonry-css` 会创建层叠上下文，导致内部渲染的 fixed 定位元素被卡片覆盖
+- **解决**: 将下拉菜单/面板移到 App.tsx 中作为全局组件渲染（如 SettingsPanel、RecentFoldersPanel）
+- **示例**:
+  ```tsx
+  // App.tsx - 全局渲染
+  {showRecentFolders && (
+    <RecentFoldersPanel
+      onClose={() => setShowRecentFolders(false)}
+      onSelectFolder={handleOpenRecentFolder}
+    />
+  )}
+  ```
+
+#### Component Props Pattern
+ Toolbar 接收控制下拉菜单的 props：
+```tsx
+<Toolbar
+  onRecentFolderToggle={() => setShowRecentFolders(!showRecentFolders)}
+  isRecentFolderOpen={showRecentFolders}
+/>
+```
+
 ## Critical Rules
 
 ### React Hooks Order

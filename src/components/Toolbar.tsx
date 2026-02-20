@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useCardStore } from "../stores/cardStore";
 import { scanDirectory } from "../lib/tauri";
@@ -17,7 +17,33 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export default function Toolbar() {
+export interface RecentFolderButtonProps {
+  onToggle: () => void;
+  isOpen: boolean;
+}
+
+export function RecentFolderButton({ onToggle, isOpen }: RecentFolderButtonProps) {
+  const recentDirs = useCardStore((s) => s.recentDirs);
+  const isScanning = useCardStore((s) => s.isScanning);
+
+  return (
+    <button
+      onClick={onToggle}
+      disabled={isScanning || recentDirs.length === 0}
+      className={`px-3 py-2 border rounded-xl text-sm transition-all duration-200 cursor-pointer ${
+        isOpen
+          ? "bg-primary-600 border-primary-500 text-white"
+          : "bg-slate-800/80 border-slate-700 hover:bg-slate-700 hover:text-white"
+      } disabled:opacity-50`}
+    >
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </button>
+  );
+}
+
+export default function Toolbar({ onRecentFolderToggle, isRecentFolderOpen }: { onRecentFolderToggle?: () => void; isRecentFolderOpen?: boolean }) {
   const searchQuery = useCardStore((s) => s.searchQuery);
   const setSearchQuery = useCardStore((s) => s.setSearchQuery);
   const sortBy = useCardStore((s) => s.sortBy);
@@ -29,26 +55,24 @@ export default function Toolbar() {
   const setCurrentDir = useCardStore((s) => s.setCurrentDir);
   const clearCards = useCardStore((s) => s.clearCards);
   const settings = useCardStore((s) => s.settings);
-  const recentDirs = useCardStore((s) => s.recentDirs);
-  const clearRecentDirs = useCardStore((s) => s.clearRecentDirs);
   const language = settings.language;
 
-  // 最近文件夹下拉菜单状态
-  const [showRecent, setShowRecent] = useState(false);
-  const recentMenuRef = useRef<HTMLDivElement>(null);
-
-  // 点击外部关闭下拉菜单
+  // 点击外部关闭下拉菜单 - 通过 props 传递的回调处理
   useEffect(() => {
+    if (!isRecentFolderOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (recentMenuRef.current && !recentMenuRef.current.contains(e.target as Node)) {
-        setShowRecent(false);
+      // 点击最近文件夹按钮不关闭（由父组件处理）
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-recent-folder-btn="true"]')) {
+        return;
+      }
+      if (onRecentFolderToggle) {
+        onRecentFolderToggle();
       }
     };
-    if (showRecent) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [showRecent]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isRecentFolderOpen, onRecentFolderToggle]);
 
   // 搜索防抖（300ms 延迟）
   const [inputValue, setInputValue] = useState(searchQuery);
@@ -77,14 +101,6 @@ export default function Toolbar() {
     }
   };
 
-  const handleOpenRecentFolder = async (dir: string) => {
-    clearCards();
-    setSearchQuery("");
-    setCurrentDir(dir);
-    setIsScanning(true);
-    await scanDirectory(dir, settings.scanDepth);
-    setShowRecent(false);
-  };
 
   return (
     <div className="flex items-center gap-3 px-4 py-3 bg-slate-900/50 backdrop-blur-md border-b border-slate-800">
@@ -108,50 +124,12 @@ export default function Toolbar() {
         )}
       </button>
 
-      {/* 最近文件夹下拉菜单 */}
-      <div className="relative" ref={recentMenuRef}>
-        <button
-          onClick={() => setShowRecent(!showRecent)}
-          disabled={isScanning || recentDirs.length === 0}
-          className="px-3 py-2 bg-slate-800/80 border border-slate-700 hover:bg-slate-700 hover:text-white
-            disabled:opacity-50 rounded-xl text-sm text-slate-300 transition-all duration-200 cursor-pointer"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </button>
-        {showRecent && (
-          <div className="absolute left-0 top-full mt-1 w-64 bg-slate-800 border border-slate-700 rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto">
-            <div className="p-2">
-              <div className="text-xs text-slate-400 px-2 py-1">{t("recentFolders", language)}</div>
-              {recentDirs.length === 0 ? (
-                <div className="text-sm text-slate-500 px-2 py-2">{t("noRecentFolders", language)}</div>
-              ) : (
-                <>
-                  {recentDirs.map((dir, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleOpenRecentFolder(dir)}
-                      className="w-full text-left px-2 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg truncate transition-colors cursor-pointer"
-                      title={dir}
-                    >
-                      {dir}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => {
-                      clearRecentDirs();
-                      setShowRecent(false);
-                    }}
-                    className="w-full text-left px-2 py-2 text-sm text-slate-500 hover:text-slate-300 hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
-                  >
-                    {t("clearRecent", language)}
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        )}
+      {/* 最近文件夹按钮 - 由父组件控制 */}
+      <div data-recent-folder-btn="true">
+        <RecentFolderButton
+          onToggle={() => onRecentFolderToggle?.()}
+          isOpen={isRecentFolderOpen || false}
+        />
       </div>
 
       <div className="relative flex-1 max-w-md">

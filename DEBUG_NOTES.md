@@ -306,3 +306,73 @@ breakpointCols={breakpointColumns as number | Record<number, number>}
 - 通过 `isHovering` 和 `isResizing` state 控制高亮显示
 - 拖动时使用 `document` 事件监听，确保鼠标移出区域也能继续拖动
 - 保存设置时机的选择（拖动结束 vs 实时保存）
+
+---
+
+# 2026-02-20: 最近文件夹面板层叠问题修复
+
+## 问题描述
+
+1. 最近文件夹下拉菜单被卡片笔记的卡片覆盖
+2. 打开后无法直接点击最近的目录打开对应的文件夹
+
+## 根因分析
+
+- `react-masonry-css` 库创建了特殊的层叠上下文
+- 下拉菜单在 Toolbar 组件内部渲染，受到 CardGrid 层叠影响
+- 即使使用 `fixed` 定位和 `z-[100]`，仍被卡片覆盖
+
+## 解决方案
+
+将最近文件夹下拉菜单移到 App.tsx 中渲染，作为全局组件：
+
+1. **Toolbar.tsx 修改**:
+   - 移除下拉菜单状态和逻辑
+   - 导出 `RecentFolderButton` 组件供父组件使用
+   - 接收 `onRecentFolderToggle` 和 `isRecentFolderOpen` props
+
+2. **App.tsx 修改**:
+   - 添加 `showRecentFolders` 状态
+   - 创建 `RecentFoldersPanel` 组件（类似 SettingsPanel）
+   - 使用 `fixed` 定位和 `z-[100]` 确保在最顶层
+   - 添加 `onMouseDown={(e) => e.stopPropagation()}` 防止点击事件被阻止
+
+## 修改文件
+
+- `src/components/Toolbar.tsx` - 移除下拉菜单，提取按钮组件
+- `src/App.tsx` - 添加 RecentFoldersPanel 全局组件
+
+## 验证方式
+
+1. 点击最近文件夹按钮
+2. 确认下拉菜单显示在卡片之上
+3. 点击任意最近文件夹，确认可以正常打开
+
+---
+
+# 组件设计模式
+
+## 全局下拉面板
+
+当组件需要显示在 CardGrid 之上时，应在 App.tsx 中渲染：
+
+```tsx
+// App.tsx
+const [showPanel, setShowPanel] = useState(false);
+
+return (
+  <>
+    <Toolbar onToggle={() => setShowPanel(!showPanel)} isOpen={showPanel} />
+    {showPanel && <GlobalPanel onClose={() => setShowPanel(false)} />}
+  </>
+);
+```
+
+## 事件冒泡处理
+
+在使用全局面板时，注意阻止事件冒泡：
+```tsx
+<div onMouseDown={(e) => e.stopPropagation()}>
+  {/* panel content */}
+</div>
+```
