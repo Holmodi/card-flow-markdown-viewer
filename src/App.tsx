@@ -27,6 +27,7 @@ export default function App() {
   const addCards = useCardStore((s) => s.addCards);
   const setSelectedCard = useCardStore((s) => s.setSelectedCard);
   const loadLastDir = useCardStore((s) => s.loadLastDir);
+  const reloadCurrentDir = useCardStore((s) => s.reloadCurrentDir);
   const removeCard = useCardStore((s) => s.removeCard);
   const deleteConfirmPath = useCardStore((s) => s.deleteConfirmPath);
   const setDeleteConfirmPath = useCardStore((s) => s.setDeleteConfirmPath);
@@ -45,8 +46,8 @@ export default function App() {
   const filteredCards = useCardFilter();
 
   const handleRefresh = useCallback(() => {
-    window.location.reload();
-  }, []);
+    reloadCurrentDir();
+  }, [reloadCurrentDir]);
 
   const handleBackdropClick = useCallback(() => {
     // 编辑模式下点击遮罩层不关闭

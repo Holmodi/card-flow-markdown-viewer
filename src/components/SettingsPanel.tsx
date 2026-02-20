@@ -7,11 +7,18 @@ const sliders: { key: keyof DisplaySettings; label: string; min: number; max: nu
   { key: "bodyFontSize", label: "正文字号", min: 10, max: 20, step: 1, unit: "px" },
   { key: "titleLines", label: "标题行数", min: 1, max: 5, step: 1, unit: "行" },
   { key: "previewLines", label: "预览行数", min: 1, max: 10, step: 1, unit: "行" },
+  { key: "scanDepth", label: "文件夹深度", min: 0, max: 5, step: 1, unit: "层" },
 ];
 
 export default function SettingsPanel() {
   const settings = useCardStore((s) => s.settings);
   const updateSettings = useCardStore((s) => s.updateSettings);
+  const reloadCurrentDir = useCardStore((s) => s.reloadCurrentDir);
+
+  const getScanDepthLabel = (value: number) => {
+    if (value === 5) return "无限制";
+    return `${value} 层`;
+  };
 
   return (
     <div className="absolute right-0 top-full mt-2 w-72 bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-xl z-[60]">
@@ -21,7 +28,7 @@ export default function SettingsPanel() {
           <div key={key}>
             <div className="flex justify-between text-xs text-slate-400 mb-1">
               <span>{label}</span>
-              <span>{settings[key]}{unit}</span>
+              <span>{key === "scanDepth" ? getScanDepthLabel(settings[key]) : settings[key]}{unit !== "层" ? unit : ""}</span>
             </div>
             <input
               type="range"
@@ -29,7 +36,13 @@ export default function SettingsPanel() {
               max={max}
               step={step}
               value={settings[key]}
-              onChange={(e) => updateSettings({ [key]: Number(e.target.value) })}
+              onChange={(e) => {
+                const newValue = Number(e.target.value);
+                updateSettings({ [key]: newValue });
+                if (key === "scanDepth") {
+                  reloadCurrentDir();
+                }
+              }}
               className="w-full h-1.5 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-500"
             />
           </div>

@@ -11,6 +11,7 @@ export interface DisplaySettings extends UserPreferences {
   bodyFontSize: number;
   titleLines: number;
   previewLines: number;
+  scanDepth: number;
 }
 
 export const defaultSettings: DisplaySettings = {
@@ -21,4 +22,5 @@ export const defaultSettings: DisplaySettings = {
   bodyFontSize: 12,
   titleLines: 2,
   previewLines: 4,
+  scanDepth: 3,
 };

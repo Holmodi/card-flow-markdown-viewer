@@ -17,6 +17,7 @@ function loadSettings(): DisplaySettings {
         bodyFontSize: defaultSettings.bodyFontSize,
         titleLines: defaultSettings.titleLines,
         previewLines: defaultSettings.previewLines,
+        scanDepth: defaultSettings.scanDepth,
         ...parsed,
       };
     }
@@ -60,12 +61,13 @@ interface CardStore {
   clearCards: () => void;
   updateSettings: (partial: Partial<DisplaySettings>) => void;
   loadLastDir: () => void;
+  reloadCurrentDir: () => void;
   setDeleteConfirmPath: (path: string | null) => void;
   setIsEditing: (editing: boolean) => void;
   setWordCount: (count: number) => void;
 }
 
-export const useCardStore = create<CardStore>((set) => ({
+export const useCardStore = create<CardStore>((set, get) => ({
   cards: new Map(),
   searchQuery: "",
   selectedTags: [],
@@ -130,8 +132,17 @@ export const useCardStore = create<CardStore>((set) => ({
   loadLastDir: () => {
     const lastDir = loadLastDir();
     if (lastDir) {
+      const settings = loadSettings();
       set({ currentDir: lastDir });
-      scanDirectory(lastDir);
+      scanDirectory(lastDir, settings.scanDepth);
+    }
+  },
+  reloadCurrentDir: () => {
+    const { currentDir, settings } = get();
+    if (currentDir) {
+      set({ isScanning: true });
+      set({ cards: new Map(), selectedCard: null });
+      scanDirectory(currentDir, settings.scanDepth);
     }
   },
   setDeleteConfirmPath: (path) => set({ deleteConfirmPath: path }),

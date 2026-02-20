@@ -27,6 +27,7 @@ export default function Toolbar() {
   const setIsScanning = useCardStore((s) => s.setIsScanning);
   const setCurrentDir = useCardStore((s) => s.setCurrentDir);
   const clearCards = useCardStore((s) => s.clearCards);
+  const settings = useCardStore((s) => s.settings);
 
   // 搜索防抖（300ms 延迟）
   const [inputValue, setInputValue] = useState(searchQuery);
@@ -51,7 +52,7 @@ export default function Toolbar() {
       setSearchQuery("");
       setCurrentDir(selected);
       setIsScanning(true);
-      await scanDirectory(selected);
+      await scanDirectory(selected, settings.scanDepth);
     }
   };
 

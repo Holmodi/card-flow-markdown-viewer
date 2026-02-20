@@ -1,8 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { CardMeta } from "../types/card";
 
-export async function scanDirectory(path: string): Promise<void> {
-  return invoke("scan_directory", { path });
+export async function scanDirectory(path: string, depth: number): Promise<void> {
+  return invoke("scan_directory", { path, depth });
 }
 
 export async function readFile(path: string): Promise<string> {

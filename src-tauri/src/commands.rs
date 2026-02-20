@@ -13,12 +13,13 @@ pub async fn scan_directory(
     app: AppHandle,
     state: State<'_, WatcherState>,
     path: String,
+    depth: u32,
 ) -> Result<(), String> {
     let app_clone = app.clone();
     let path_clone = path.clone();
 
     tokio::task::spawn_blocking(move || {
-        scanner::scan_directory(&app_clone, &path_clone);
+        scanner::scan_directory(&app_clone, &path_clone, depth);
     })
     .await
     .map_err(|e| e.to_string())?;

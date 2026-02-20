@@ -23,7 +23,15 @@ fn scan_dir_recursive(
     files_checked: &mut usize,
     non_md_files: &mut usize,
     parse_failures: &mut usize,
+    current_depth: u32,
+    max_depth: u32,
 ) {
+    // max_depth 为 0 表示无限制，current_depth 从 0 开始
+    // 当 max_depth > 0 时，如果 current_depth >= max_depth 则停止递归
+    if max_depth > 0 && current_depth >= max_depth {
+        return;
+    }
+
     let read_dir = fs::read_dir(dir).ok();
 
     if let Some(entries) = read_dir {
@@ -36,6 +44,8 @@ fn scan_dir_recursive(
             files_checked,
             non_md_files,
             parse_failures,
+            current_depth,
+            max_depth,
         );
     }
 }
@@ -49,6 +59,8 @@ fn process_entries(
     files_checked: &mut usize,
     non_md_files: &mut usize,
     parse_failures: &mut usize,
+    current_depth: u32,
+    max_depth: u32,
 ) {
     for entry in entries.flatten() {
         let path = entry.path();
@@ -71,6 +83,8 @@ fn process_entries(
                     files_checked,
                     non_md_files,
                     parse_failures,
+                    current_depth + 1,
+                    max_depth,
                 );
             }
         } else {
@@ -107,14 +121,18 @@ fn process_entries(
     }
 }
 
-pub fn scan_directory(app: &AppHandle, dir: &str) {
-    log!("Starting scan of directory: {}", dir);
+pub fn scan_directory(app: &AppHandle, dir: &str, depth: u32) {
+    log!("Starting scan of directory: {} with depth: {}", dir, depth);
     let start = Instant::now();
     let mut batch: Vec<CardMeta> = Vec::with_capacity(BATCH_SIZE);
     let mut total: usize = 0;
     let mut files_checked: usize = 0;
     let mut non_md_files: usize = 0;
     let mut parse_failures: usize = 0;
+
+    // 深度为 0 时表示无限制（前端传 5 表示无限制）
+    // 深度从 0 开始计算：0 = 只扫描当前目录，1 = 扫描当前目录 + 1层子目录
+    let max_depth = if depth == 5 { 0 } else { depth };
 
     scan_dir_recursive(
         app,
@@ -124,6 +142,8 @@ pub fn scan_directory(app: &AppHandle, dir: &str) {
         &mut files_checked,
         &mut non_md_files,
         &mut parse_failures,
+        0,
+        max_depth,
     );
 
     log!("Files checked: {}, Non-md files: {}, Parse failures: {}", files_checked, non_md_files, parse_failures);
