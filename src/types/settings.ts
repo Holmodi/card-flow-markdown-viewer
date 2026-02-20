@@ -1,7 +1,10 @@
+export type Language = "en" | "zh";
+
 export type TimezoneOffset = "UTC" | "UTC+8" | "UTC+9" | "UTC-5";
 
 export interface UserPreferences {
   timezone: TimezoneOffset;
+  language: Language;
 }
 
 export interface DisplaySettings extends UserPreferences {
@@ -16,6 +19,7 @@ export interface DisplaySettings extends UserPreferences {
 
 export const defaultSettings: DisplaySettings = {
   timezone: "UTC+8",
+  language: "en",
   columnCount: 4,
   detailWidth: 700,
   titleFontSize: 14,

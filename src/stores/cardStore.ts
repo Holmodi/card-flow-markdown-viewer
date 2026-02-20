@@ -11,6 +11,7 @@ function loadSettings(): DisplaySettings {
       const parsed = JSON.parse(raw);
       return {
         timezone: defaultSettings.timezone,
+        language: defaultSettings.language,
         columnCount: defaultSettings.columnCount,
         detailWidth: defaultSettings.detailWidth,
         titleFontSize: defaultSettings.titleFontSize,
@@ -23,6 +24,16 @@ function loadSettings(): DisplaySettings {
     }
   } catch {}
   return defaultSettings;
+}
+
+function loadRecentDirs(): string[] {
+  try {
+    const raw = localStorage.getItem("card-flow-recent-dirs");
+    if (raw) {
+      return JSON.parse(raw);
+    }
+  } catch {}
+  return [];
 }
 
 function loadLastDir(): string | null {
@@ -43,6 +54,7 @@ interface CardStore {
   isScanning: boolean;
   currentDir: string | null;
   settings: DisplaySettings;
+  recentDirs: string[];
   deleteConfirmPath: string | null;
   isEditing: boolean;
   currentWordCount: number;
@@ -62,6 +74,8 @@ interface CardStore {
   updateSettings: (partial: Partial<DisplaySettings>) => void;
   loadLastDir: () => void;
   reloadCurrentDir: () => void;
+  addRecentDir: (dir: string) => void;
+  clearRecentDirs: () => void;
   setDeleteConfirmPath: (path: string | null) => void;
   setIsEditing: (editing: boolean) => void;
   setWordCount: (count: number) => void;
@@ -77,6 +91,7 @@ export const useCardStore = create<CardStore>((set, get) => ({
   isScanning: false,
   currentDir: loadLastDir(),
   settings: loadSettings(),
+  recentDirs: loadRecentDirs(),
   deleteConfirmPath: null,
   isEditing: false,
   currentWordCount: 0,
@@ -119,8 +134,13 @@ export const useCardStore = create<CardStore>((set, get) => ({
   setCurrentDir: (currentDir) => {
     if (currentDir) {
       localStorage.setItem("card-flow-last-dir", currentDir);
+      // 添加到最近文件夹
+      const { recentDirs } = get();
+      const filtered = recentDirs.filter((d) => d !== currentDir);
+      const updated = [currentDir, ...filtered].slice(0, 10);
+      localStorage.setItem("card-flow-recent-dirs", JSON.stringify(updated));
+      set({ currentDir, recentDirs: updated });
     }
-    set({ currentDir });
   },
   clearCards: () => set({ cards: new Map(), selectedCard: null }),
   updateSettings: (partial) =>
@@ -144,6 +164,18 @@ export const useCardStore = create<CardStore>((set, get) => ({
       set({ cards: new Map(), selectedCard: null });
       scanDirectory(currentDir, settings.scanDepth);
     }
+  },
+  addRecentDir: (dir: string) => {
+    const { recentDirs } = get();
+    // 移除已存在的路径并添加到最前面
+    const filtered = recentDirs.filter((d) => d !== dir);
+    const updated = [dir, ...filtered].slice(0, 10); // 保留最多10个
+    localStorage.setItem("card-flow-recent-dirs", JSON.stringify(updated));
+    set({ recentDirs: updated });
+  },
+  clearRecentDirs: () => {
+    localStorage.setItem("card-flow-recent-dirs", "[]");
+    set({ recentDirs: [] });
   },
   setDeleteConfirmPath: (path) => set({ deleteConfirmPath: path }),
   setIsEditing: (editing) => set({ isEditing: editing }),
