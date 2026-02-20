@@ -1,77 +1,81 @@
 # MarkDance
 
-面向大规模 Markdown 碎片笔记的高性能卡片式预览工具。
+A high-performance card-style preview tool for large-scale Markdown fragment notes.
 
-![主界面](pic/cardflowPreView.png)
+![Main Interface](pic/cardflowPreView.png)
 
 ---
 
-## 核心特性
+[中文版](./README_ZH.md)
 
-- **无损接入 Obsidian 库**：直接读取指定文件夹，零侵入性
-- **瀑布流布局**：高效浏览 5000+ 卡片，响应式排列
-- **侧边详情面板**：Markdown 渲染与编辑
-- **智能过滤排序**：标签筛选、时间轴排序、实时搜索
-- **实时文件监听**：目录变更自动更新
-![主界面2](pic/carflowPreView2.png)
 ---
 
-## 快速开始
+## Core Features
+
+- **Lossless Obsidian Integration**: Directly read specified folders, zero intrusion
+- **Masonry Layout**: Efficiently browse 5000+ cards with responsive arrangement
+- **Sidebar Detail Panel**: Markdown rendering and editing
+- **Smart Filter & Sort**: Tag filtering, timeline sorting, real-time search
+- **Real-time File Monitoring**: Auto-update on directory changes
+![Main Interface 2](pic/carflowPreView2.png)
+---
+
+## Quick Start
 
 ```bash
-# 安装依赖
+# Install dependencies
 npm install
 
-# 开发模式（热重载）
+# Development mode (hot reload)
 npm run tauri dev
 
-# 构建安装包
+# Build installer
 npm run tauri build
 ```
 
 ---
 
-## 技术栈
+## Tech Stack
 
-| 层 | 依赖 | 用途 |
+| Layer | Dependency | Purpose |
 |---|---|---|
-| 前端框架 | React 19 | UI |
-| 状态管理 | Zustand 5 | 全局状态 |
-| Markdown | react-markdown 9 + remark-gfm 4 | 渲染 |
-| 样式 | Tailwind CSS 4 | 样式 |
-| 瀑布流 | react-masonry-css | 卡片布局 |
-| 构建 | Vite 6 | 构建工具 |
-| 桌面 | Tauri 2 | 桌面应用框架 |
-| 后端 | Rust | 文件 IO |
+| Frontend Framework | React 19 | UI |
+| State Management | Zustand 5 | Global state |
+| Markdown | react-markdown 9 + remark-gfm 4 | Rendering |
+| Styling | Tailwind CSS 4 | Styles |
+| Masonry | react-masonry-css | Card layout |
+| Build | Vite 6 | Build tool |
+| Desktop | Tauri 2 | Desktop app framework |
+| Backend | Rust | File IO |
 
 ---
 
-## 目录结构
+## Project Structure
 
 ```
 src/
-├── main.tsx              # 入口
-├── App.tsx               # 根组件
-├── index.css             # 全局样式
+├── main.tsx              # Entry point
+├── App.tsx               # Root component
+├── index.css             # Global styles
 ├── components/
-│   ├── Toolbar.tsx       # 顶栏
-│   ├── TagFilter.tsx     # 标签过滤
-│   ├── CardGrid.tsx      # 瀑布流网格
-│   ├── CardItem.tsx      # 单张卡片
-│   ├── CardDetail.tsx    # 详情面板
-│   ├── SettingsPanel.tsx # 设置面板
-│   ├── FloatingTool.tsx  # 悬浮工具
-│   ├── TimeDisplay.tsx   # 时间显示
-│   └── EmptyState.tsx    # 空状态
+│   ├── Toolbar.tsx       # Top bar
+│   ├── TagFilter.tsx     # Tag filtering
+│   ├── CardGrid.tsx      # Masonry grid
+│   ├── CardItem.tsx      # Single card
+│   ├── CardDetail.tsx    # Detail panel
+│   ├── SettingsPanel.tsx # Settings panel
+│   ├── FloatingTool.tsx  # Floating tool
+│   ├── TimeDisplay.tsx   # Time display
+│   └── EmptyState.tsx    # Empty state
 ├── hooks/
-│   ├── useTauriEvents.ts # 事件监听
-│   └── useCardFilter.ts  # 过滤排序
+│   ├── useTauriEvents.ts # Event listening
+│   └── useCardFilter.ts  # Filter & sort
 ├── lib/
-│   ├── tauri.ts          # Tauri 调用
-│   └── timezone.ts       # 时区工具
+│   ├── tauri.ts          # Tauri invocation
+│   └── timezone.ts       # Timezone utilities
 ├── stores/
-│   └── cardStore.ts      # Zustand 状态
+│   └── cardStore.ts      # Zustand store
 └── types/
-    ├── card.ts           # 卡片类型
-    └── settings.ts        # 设置类型
+    ├── card.ts           # Card types
+    └── settings.ts        # Settings types
 ```
